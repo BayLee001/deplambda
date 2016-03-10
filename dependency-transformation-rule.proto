@@ -1,0 +1,97 @@
+// Lambda Dependency Transformation rule. These rules specify tregex patterns
+// to find the target nodes at which stuctural changes have to be performed to
+// create dependency trees that obey the obliqueness hierarchy. For example, in
+// "Apple which Jobs founded, developed iPhone.", the label of "which" is
+// renamed as wh-dobj so that "which" composes with "founded" after "Jobs"
+// has composed with "founded".
+
+syntax = "proto2";
+
+message LambdaDependencyTransformationRule {
+  // The name of the linguistic phenomenon e.g., "relative clause subject
+  // extraction".
+  optional string name = 1 [default = ""];
+
+  // The priority of the rule.
+  optional int32 priority = 2;
+
+  // Tregex pattern matching rule to identify the nodes of the tree where the
+  // transformations has to be applied.
+  optional string tregex = 3;
+
+  // A transformation specifies an action has to be performed on a target node,
+  // and additional arguments required by the action e.g., if the action is
+  // ADD_CHILD, it requires two arguments, the label (l: node) and the word
+  // token (w:) that has to be attached to the label.
+  message Transformation {
+    // The target node where the transformation has to be applied. A target
+    // node can be specified using the named node feature in tregex pattern.
+    optional string target = 1;
+
+    // Action defines the set of actions that can be performed on a node.
+    enum Action {
+      UNSPECIFIED = 0;    // default
+      CHANGE_LABEL = 1;   // rename a label
+      ADD_CHILD = 2;      // add a new dependency
+      ASSIGN_LAMBDA = 3;  // assign a lambda expression
+    }
+
+    //  The action that has to be performed on the target.
+    optional Action action = 2 [default = UNSPECIFIED];
+
+    // An argument required by CHANGE_LABEL and ADD_CHILD actions. In
+    // CHANGE_LABEL, the old label is renamed with the label specfied. In
+    // ADD_CHILD, a dependent with the new label is added.
+    optional string label = 3;
+
+    // An argument required by ADD_CHILD. Specifies the word that has to be
+    // added as a child to the label node.
+    optional string child = 4;
+
+    // Lambda expression that should be assigned by an ASSIGN_LAMBDA action. A
+    // named node can also be used in the expression by mentioning the name of
+    // the node surrounded by $. For example, the lambda expression of a
+    // preposition could be written as
+    //  (LAMBDA F1 F2 X : (EXISTS Y (F1 X) (F2 Y)
+    //    (p:EVENT.ENTITY:$parent$.$prep$.arg_1 X X)
+    //    (p:EVENT.ENTITY:$parent$.$prep$.arg_2 X Y)),
+    // where parent and prep are named nodes. The named node is used for
+    // lexicalization of the predicate.
+    optional string lambda = 5;
+  }
+
+  // The set of transformations that has to be performed on the matched named
+  // nodes.
+  repeated Transformation transformation = 4;
+}
+
+// The set of Dependency Transformation rules in a specific group.
+message LambdaDependencyTransformationRuleGroup {
+  // The name of the group describing a linguistic phenonemon with a set of
+  // rules e.g., relative clause.
+  optional string name = 1 [default = ""];
+
+  // The priority of the group.
+  optional int32 priority = 2;
+
+  // Set of rules describing the linguistic phenomenon of this group.
+  repeated LambdaDependencyTransformationRule rule = 3;
+}
+
+// The set of tranformation groups.
+message LambdaDependencyTransformationRuleGroups {
+  // Set of rule groups describing the language.
+  repeated LambdaDependencyTransformationRuleGroup rulegroup = 1;
+
+  // Message storing obliqueness hierarchy information for a set of relations.
+  message RelationPriority {
+    // The names of the relations with this priority.
+    repeated string name = 1;
+
+    // The priority of the relations.
+    optional int32 priority = 2;
+  }
+
+  // The obliqueness hierarchy of relations.
+  repeated RelationPriority relation = 2;
+}

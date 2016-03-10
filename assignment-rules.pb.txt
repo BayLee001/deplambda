@@ -1,0 +1,639 @@
+relation {
+  name: "l-amod"
+  name: "l-nn"
+  name: "l-num"
+  name: "l-number"
+  name: "l-title"
+  name: "l-extract"
+  priority: 2
+}
+relation {
+  name: "l-dobj"
+  name: "l-pobj"
+  name: "l-pcomp"
+  name: "l-aux"
+  name: "l-mwe"
+  name: "l-expl"
+  name: "l-prt"
+  priority: 10
+}
+relation {
+  name: "l-conj-vp"
+  priority: 15
+}
+relation {
+  name: "l-ccomp"
+  name: "l-xcomp"
+  priority: 20
+}
+relation {
+  name: "l-attr"
+  name: "l-attr-copula"
+  name: "l-prep"
+  name: "l-det"
+  name: "l-auxpass"
+  name: "l-acomp"
+  name: "l-rel"
+  priority: 30
+}
+relation {
+  name: "l-conj"
+  name: "l-cc"
+  name: "l-neg"
+  name: "l-dep"
+  priority: 35
+}
+relation {
+  name: "l-iobj"
+  name: "l-appos"
+  priority: 40
+}
+relation {
+  name: "l-nsubj"
+  name: "l-nsubjpass"
+  name: "l-nsubj-copula"
+  priority: 45
+}
+relation {
+  name: "l-mark"
+  name: "l-poss"
+  priority: 50
+}
+relation {
+  name: "l-npadvmod"
+  name: "l-advmod"
+  name: "l-advcl"
+  name: "l-tmod"
+  priority: 50
+}
+relation {
+  name: "l-BIND"
+  priority: 50
+}
+relation {
+  name: "l-wh-nsubj"
+  name: "l-wh-nsubjpass"
+  name: "l-wh-attr"
+  name: "l-wh-dobj"
+  name: "l-wh-prep"
+  name: "l-wh-tmod"
+  name: "l-wh-dep"
+  priority: 60
+}
+relation {
+  name: "l-rcmod"
+  name: "l-partmod"
+  name: "l-infmod"
+  name: "l-vmod"
+  priority: 70
+}
+relation {
+  name: "l-wh-advmod"
+  name: "l-wh-count"
+  priority: 90
+}
+relation {
+  name: "l-conj-s"
+  priority: 95
+}
+relation {
+  name: "l-p"
+  priority: 100
+}
+relation {
+  name: "l-TRACE"
+  priority: 100
+}
+
+rulegroup {
+  name: "verbal and prepositional arguments"
+  priority: 1
+  rule {
+    name: "nsubj"
+    priority: 1
+    tregex: "l-nsubj=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:arg_1 E X)))"
+    }
+  }
+  rule {
+    name: "attr"
+    priority: 2
+    tregex: "l-attr=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:arg_1 E X)))"
+    }
+  }
+  rule {
+    name: "nsubjpass"
+    priority: 3
+    tregex: "l-nsubjpass=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:arg_1 E X)))"
+    }
+  }
+  rule {
+    name: "dobj"
+    priority: 4
+    tregex: "l-dobj=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:arg_2 E X)))"
+    }
+  }
+  rule {
+    name: "iobj"
+    priority: 5
+    tregex: "l-iobj=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:arg_3 E X)))"
+    }
+  }
+  rule {
+    name: "nsubj-copula"
+    priority: 6
+    tregex: "l-nsubj-copula=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:cop_arg_1 E X)))"
+    }
+  }
+  rule {
+    name: "attr-copula"
+    priority: 7
+    tregex: "l-attr-copula=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:cop_arg_2 E X)))"
+    }
+  }
+}
+
+rulegroup {
+  name: "prepositions"
+  priority: 1
+  rule {
+    name: "l-prep"
+    priority: 1
+    tregex: "l-prep=relation"
+    # Note: PPMOD is later collapsed out.
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS P : (F E) (G P) (p:PPMOD E P)))"
+    }
+  }
+  rule {
+    name: "preposition"
+    priority: 2
+    tregex: "/^w.*$/=prep $ t-IN !$ l-mwe"
+    # Note: the preposition is represented by a prepositional event P.
+    transformation {
+      target: "prep"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA P : (p:EVENT:$prep$ P))"
+    }
+  }
+  rule {
+    name: "pcomp with verbal argument"
+    priority: 3
+    tregex: "/^l-pcomp$/=relation < /^t-V.*$/"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G P : (EXISTS E : (F P) (G E) (p:EVENT.EVENT:arg_2 P E)))"
+    }
+  }
+  rule {
+    name: "pcomp/pobj with pcomp/pobj argument"
+    priority: 4
+    tregex: "/^l-(?:advmod|pcomp|pobj)$/=relation < /^l-(?:pobj|pcomp)$/"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G P : (F P) (G P))"
+    }
+  }
+  rule {
+    name: "pobj/pcomp"
+    priority: 5
+    tregex: "/^l-(?:pobj|pcomp)$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G P : (EXISTS X : (F P) (G X) (p:EVENT.ENTITY:arg_2 P X)))"
+    }
+  }
+}
+
+rulegroup {
+  name: "control, complements and relatives"
+  priority: 1
+  rule {
+    name: "xcomp/ccomp"
+    priority: 1
+    tregex: "/^l-(?:xcomp|ccomp)$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E1 : (EXISTS E2 : (F E1) (G E2) (p:EVENT.EVENT:arg_ctrl E1 E2)))"
+    }
+  }
+  rule {
+    name: "partmod/infmod modifying verb"
+    priority: 2
+    tregex: "/^l-(?:partmod|infmod|vmod)$/=relation $ /^t-V.*$/"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS E1 : (F E) (G E1)))"
+    }
+  }
+  rule {
+    name: "partmod/infmod"
+    priority: 3
+    tregex: "/^l-(?:partmod|infmod|vmod)$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS E : (F X) (G E) (p:EVENT.ENTITY:arg_1 E X)))"
+    }
+  }
+}
+
+rulegroup {
+  name: "noun relations and modifiers"
+  priority: 1
+  rule {
+    name: "the"
+    priority: 1
+    tregex: "/^w-[Tt]he$/=the > (l-det $ /^t-(NN.*|__ENTITY__)$/)"
+    transformation {
+      target: "the"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:UNIQUE X))"
+    }
+  }
+  rule {
+    name: "determiner or adjective as as nominal subject, object, or indirect object"
+    priority: 2
+    tregex: "/^w-.*$/=word $ /^t-(?:W?DT|JJ[RS]?|W?RB[RS]?)$/ > /^l-(wh-)?(?:nsubj|nsubjpass|nsubj-copula|attr|attr-copula|dobj|iobj|dep).*$/"
+    transformation {
+      target: "word"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPE:$word$ X))"
+    }
+  }
+  rule {
+    name: "noun modifier"
+    priority: 3
+    tregex: "/^w-.*$/=modifier > /^l-(?:nn|predet|title|number|amod)$/"
+    # He was the "company" president.
+    transformation {
+      target: "modifier"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPEMOD:$modifier$ X))"
+    }
+  }
+  rule {
+    name: "numbers in num/attr relation"
+    priority: 4
+    tregex: "/^w-.*$/=number $ /^t-(?:CD|[$])$/ > /^l-(?:num|attr)$/"
+    # Titanic won "10" oscars.
+    transformation {
+      target: "number"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPE:$number$ X))"
+    }
+  }
+  rule {
+    name: "proper noun / pronoun entity"
+    priority: 5
+    tregex: "/^w-.*$/=noun $ /^t-(?:N.*|WP|PRP.*|CD|[$]|__ENTITY__)$/"
+    # The "US" president.
+    transformation {
+      target: "noun"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPE:$noun$ X) (p:EVENT.ENTITY:arg_1 X X))"
+    }
+  }
+  rule {
+    name: "possesive"
+    priority: 1
+    tregex: "l-poss=relation"
+    transformation {
+      # Hilton's hotel.
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F X) (G Y) (p:EVENT.ENTITY:s_arg_2 X Y)))"
+    }
+  }
+  rule {
+    name: "nnp modifying nn"
+    priority: 2
+    tregex: "/^l-(?:nn|amod|appos)/=relation [< /^t-(NNP|NNPS|__ENTITY__)$/ $ /^t-(N.*|__ENTITY__)$/]"
+    transformation {
+      # Tour de France winners.
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F X) (G Y) (p:EVENT.ENTITY:q_arg_2 X Y)))"
+    }
+  }
+  rule {
+    name: "number modifying nn"
+    priority: 3
+    tregex: "l-num=relation [< /^t-(CD|[$])$/ $ /^t-(N.*|__ENTITY__)$/]"
+    transformation {
+      # 10 tickets.
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F X) (G Y) (p:EVENT.ENTITY:q_arg_2 X Y)))"
+    }
+  }
+}
+
+rulegroup {
+  name: "verb modifiers"
+  priority: 1
+  rule {
+    name: "verb (passive)"
+    priority: 1
+    tregex: "/^w-.*$/=verb $ t-VBN !> /^l-(?:aux|auxpass)$/"
+    # Titanic was "directed" by Cameron.
+    transformation {
+      target: "verb"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:EVENT:$verb$.VBN E))"
+    }
+  }
+  rule {
+    name: "verb (active)"
+    priority: 2
+    tregex: "/^w-.*$/=verb $ /^t-V.*$/ !> /^l-(?:aux|auxpass)$/"
+    # Cameron "directed" Titanic.
+    transformation {
+      target: "verb"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:EVENT:$verb$ E))"
+    }
+  }
+  rule {
+    name: "adjective in acomp and xcomp"
+    priority: 3
+    tregex: "/^w-.*$/=adj $ /^t-JJ.*$/ > (/^l-(?:acomp|xcomp)$/ $ /^t-V.*$/ $ /^w-.*$/=verb)"
+    # He was famous.
+    transformation {
+      target: "adj"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:EVENT:$verb$.$adj$ E))"
+    }
+  }
+  rule {
+    name: "drop head relation"
+    priority: 1
+    tregex: "l-acomp=relation $ /^t-V.*$/"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G : G)"
+    }
+  }
+  rule {
+    name: "wh-advmod"
+    priority: 2
+    tregex: "/^w-.*$/=word > (l-wh-advmod !> l-rcmod)"
+    # "When" he slept
+    transformation {
+      target: "word"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPE:$word$ X))"
+    }
+  }
+  rule {
+    name: "adverb"
+    priority: 3
+    tregex: "/^w-.*$/=adverb $ /^t-RB[RS]?$/ > (/^l-.*$/ $ /^t-V.*$/)"
+    # He ate food "calmly".
+    transformation {
+      target: "adverb"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:EVENTMOD:$adverb$ E))"
+    }
+  }
+  rule {
+    name: "mark/advmod in advcl"
+    priority: 1
+    tregex: "/^l-(?:mark|advmod)$/=relation < /^w-.*$/=word > l-advcl"
+    # She left "when/as/while/because/..." he "slept".
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E1 : (EXISTS E2 : (F E2) (p:EVENT.EVENT:$word$.arg_2 E1 E2)))"
+    }
+  }
+  rule {
+    name: "count extraction"
+    priority: 1
+    tregex: "l-wh-count=relation"
+    # "How many" Indiana Jones movies are there?
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (F X))"
+    }
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F Y) (p:EMPTY X) (p:COUNT Y X)))"
+    }
+  }
+  rule {
+    name: "wh-advmod (unless already doing extraction)"
+    priority: 2
+    tregex: "l-wh-advmod=relation < /^w-.*/=adverb $ /^t-(V|N).*$/ !$ l-BIND"
+    # "when" he "slept".
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS E : (F E) (G X) (p:EVENT.ENTITY:$adverb$.arg_2 E X)))"
+    }
+  }
+  rule {
+    name: "tmod modifying verb"
+    priority: 1
+    tregex: "l-tmod=tmod $ /^t-V.*$/"
+    # She "watched" the Super Bowl last "night".
+    # "Then" she "watched" the Super Bowl.
+    transformation {
+      target: "tmod"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:tmod E X)))"
+    }
+  }
+  rule {
+    name: "npadvmod modifying verb or in acomp"
+    priority: 1
+    tregex: "l-npadvmod=npadvmod [$ /^t-V.*$/ | > l-acomp]"
+    # He was 21 "years" old at the time.
+    transformation {
+      target: "npadvmod"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS X : (F E) (G X) (p:EVENT.ENTITY:npadvmod E X)))"
+    }
+  }
+  rule {
+    name: "adverb in tmod"
+    priority: 1
+    tregex: "/^w-.*$/=target $ /^t-RB[RS]?$/ > l-tmod"
+    # "Now" she left him.
+    transformation {
+      target: "target"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:TYPE:$target$ X))"
+    }
+  }
+  rule {
+    name: "negation"
+    priority: 1
+    tregex: "/^w-.*$/=neg > l-neg"
+    # Cameron "did" not direct Titanic.
+    transformation {
+      target: "neg"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:NEGATION E))"
+    }
+  }
+  rule {
+    name : "modal"
+    priority: 1
+    tregex: "/^w-.*$/=modal $ t-MD > (l-aux $ /^t-V.*$/)"
+    # Cameron "will" direct Titanic.
+    transformation {
+      target: "modal"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA E : (p:EVENTMOD:$modal$ E))"
+    }
+  }
+}
+
+rulegroup {
+  name: "conjunctions"
+  priority: 1
+  rule {
+    name: "conjunction"
+    priority: 1
+    tregex: "/^l-conj.*$/=conj"
+    transformation {
+      target: "conj"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS X1 X2 : (F X1) (G X2) (p:PAIR X X1 X2)))"
+    }
+  }
+}
+
+rulegroup {
+  name: "Multi-word expressions"
+  priority: 1
+  rule {
+    name: "mwe and prt"
+    priority: 1
+    tregex: "/^l-(?:mwe|prt)$/=relation < /^w-.*$/=modifier $ /^w-.*$/=head"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (F E) (p:EVENT:$head$.$modifier$ E))"
+    }
+  }
+}
+
+rulegroup {
+  name: "Questions"
+  priority: 1
+  rule {
+    name: "question"
+    priority: 1
+    tregex: "/^w-[?]$/=word"
+    transformation {
+      target: "word"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:QUESTION:$word$ X))"
+    }
+  }
+}
+
+rulegroup {
+  name: "defaults"
+  priority: 10
+  rule {
+    name: "default words"
+    priority: 1
+    tregex: "/^w-.*$/=word"
+    transformation {
+      target: "word"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA X : (p:EMPTY:$word$ X))"
+    }
+  }
+  rule {
+    name: "verbal dep or rel"
+    priority: 1
+    tregex: "/^l-(dep|rel)$/=relation < /^t-V.*$/"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G E : (EXISTS E1 : (F E) (G E1) (p:EVENT.EVENT:dep_arg_2 E E1)))"
+    }
+  }
+  rule {
+    name: "dep or rel default"
+    priority: 2
+    tregex: "/^l-(dep|rel)$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F X) (G Y) (p:EVENT.ENTITY:dep_arg_2 X Y)))"
+    }
+  }
+  rule {
+    name: "default relations"
+    priority: 5
+    #tregex: "/^l-(?:ROOT|cc|complm|ps|p|acomp|wh-.*|nn|amod|det|predet|title|number|num|advcl|aux.*|neg|appos|rcmod|infmod|npadvmod|advmod|tmod|mark|extract)$/=relation"
+    tregex: "/^l-.*$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (F X) (G X))"
+    }
+  }
+  rule {
+    name: "fallback relation"
+    priority: 10
+    tregex: "/^l-.*$/=relation"
+    transformation {
+      target: "relation"
+      action: ASSIGN_LAMBDA
+      lambda: "(LAMBDA F G X : (EXISTS Y : (F X) (G Y)))"
+    }
+  }
+  rule {
+    name: "virtual node"
+    priority: 1
+    tregex: "/^v-.*$/=target"
+    transformation {
+      target: "target"
+      action: ASSIGN_LAMBDA
+      lambda: "$target$"
+    }
+  }
+}

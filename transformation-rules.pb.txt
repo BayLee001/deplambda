@@ -1,0 +1,497 @@
+rulegroup {
+  name: "parser bug fixes"
+  priority: 1
+  # NOTE: These heuristics correct some common parser errors. Use sparingly!
+  rule {
+    name: "preposition labeled dep"
+    priority: 1
+    tregex: "/^l-(?:dep|rel)$/=relation < t-IN $ /^t-(?:IN|N|V|W?RB[RS]).*$/"
+    transformation {
+      target: "relation"
+      action: CHANGE_LABEL
+      label: "l-prep"
+    }
+  }
+  rule {
+    name: "two nsubj, replace first with attr"
+    priority: 1
+    tregex: "l-nsubj=relation $ l-nsubj"
+    transformation {
+      target: "relation"
+      action: CHANGE_LABEL
+      label: "l-attr"
+    }
+  }
+  rule {
+    name: "two nsubjpass, replace first with attr"
+    priority: 1
+    tregex: "l-nsubjpass=relation $ l-nsubjpass"
+    transformation {
+      target: "relation"
+      action: CHANGE_LABEL
+      label: "l-attr"
+    }
+  }
+  rule {
+    name: "dep wh-word as attr"
+    priority: 1 tregex: "l-dep=relation < /^t-WP$/ > l-ROOT"
+    transformation {
+      target: "relation"
+      action: CHANGE_LABEL
+      label: "l-wh-attr"
+    }
+  }
+  rule {
+    name: "dep should be wdt"
+    priority: 1
+    tregex: "l-dep=relation < t-WDT"
+    # Cameron directed "which" film?
+    transformation {
+      target: "relation"
+      action: CHANGE_LABEL
+      label: "l-det"
+    }
+  }
+}
+
+rulegroup {
+  name: "conjunctions"
+  priority: 1
+  rule {
+    name: "S conjunction"
+    priority: 1
+    tregex: "l-conj=conj $ /^t-V.*$/ [< (/^t-V.*$/ $ l-nsubj) | < (t-VBN $ l-nsubjpass)]"
+    # Jobs "started" Apple and Page "founded" Google
+    transformation {
+      target: "conj"
+      action: CHANGE_LABEL
+      label: "l-conj-s"
+    }
+  }
+  rule {
+    name: "VP conjunction"
+    priority: 2
+    tregex: "l-conj=conj $ /^t-V.*$/ [< (/^t-V.*$/ $ l-dobj) | < (/^t-V.*$/ $ l-dobj)]"
+    # Jobs "started" Apple and "founded" Google
+    transformation {
+      target: "conj"
+      action: CHANGE_LABEL
+      label: "l-conj-vp"
+    }
+  }
+}
+
+rulegroup {
+  # We start by marking nodes that should be extracted (those nodes that are
+  # modified by some wh-word).
+  name: "wh-word extraction marking"
+  priority: 1
+  rule {
+    name: "wh-marker"
+    priority: 1
+    tregex: "/^l-(?:nsubj|nsubjpass|attr|dobj|pobj|tmod|dep)$/=target [< /^t-W.*$/ | < (/l-.*$/ < /^t-W.*$/) | < (/^l-.*$/ < (l-advmod < t-WRB))]"
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-wh-marker"
+      child: "v-foo"
+    }
+  }
+  rule {
+    name: "wh-marker advmod"
+    priority: 2
+    tregex: "l-advmod=target [[< t-WRB & !> l-advmod] | < (l-advmod < t-WRB)]"
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-wh-marker"
+      child: "v-foo"
+    }
+  }
+}
+
+rulegroup {
+  name: "wh-word extraction"
+  priority: 1
+  rule {
+    name: "wh-nsubj"
+    priority: 1
+    tregex: "l-nsubj=target < l-wh-marker"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-nsubj"
+    }
+  }
+  rule {
+    name: "wh-nsubjpass"
+    priority: 1
+    tregex: "l-nsubjpass=target < l-wh-marker"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-nsubjpass"
+    }
+  }
+  rule {
+    name: "wh-dobj"
+    priority: 1
+    tregex: "l-dobj=target < l-wh-marker"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-dobj"
+    }
+  }
+  rule {
+    name: "wh-attr"
+    priority: 1
+    tregex: "l-attr=target < l-wh-marker"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-attr"
+    }
+  }
+  rule {
+    name: "wh-advmod (unless in advcl)"
+    priority: 1
+    tregex: "l-advmod=target < l-wh-marker !> l-advcl"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-advmod"
+    }
+  }
+  rule {
+    name: "wh-tmod"
+    priority: 1
+    tregex: "l-tmod=target < l-wh-marker"
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-tmod"
+    }
+  }
+  rule {
+    name: "wh-dep"
+    priority: 1
+    tregex: "l-dep=target < l-wh-marker"
+    # "What" city did Esther come from?
+    transformation {
+      target: "target"
+      action: CHANGE_LABEL
+      label: "l-wh-dep"
+    }
+  }
+}
+
+rulegroup {
+  name: "Control"
+  priority: 1
+  rule {
+    name: "Subject control"
+    priority: 1
+    tregex: "l-xcomp=relation !< /^l-(?:wh-)nsubj.*$/ > (/^l-.*$/=verb [!< l-dobj | < /^w-(?:offer|promise|threat)$/] < /^l-(?:wh-)?(?:nsubj).*$/=nsubj)"
+    transformation {
+      target: "relation"
+      action: ADD_CHILD
+      label: "l-nsubj"
+      child: "v-f"
+    }
+    transformation {
+      target: "nsubj"
+      action: ADD_CHILD
+      label: "l-extract"
+      child: "v-f"
+    }
+    transformation {
+      target: "verb"
+      action: ADD_CHILD
+      label: "l-TRACE"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "vmod control"
+    priority: 2
+    tregex: "l-xcomp=relation !< /^l-(?:wh-)nsubj.*$/ > (/^l-(?:partmod|infmod|vmod)$/ > /^l-.*$/=controller)"
+    transformation {
+      target: "relation"
+      action: ADD_CHILD
+      label: "l-nsubj"
+      child: "v-f"
+    }
+    transformation {
+      target: "controller"
+      action: ADD_CHILD
+      label: "l-extract"
+      child: "v-f"
+    }
+    transformation {
+      target: "controller"
+      action: ADD_CHILD
+      label: "l-TRACE"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "Object control"
+    priority: 3
+    tregex: "l-xcomp=relation !< l-nsubj > (/^l-.*$/=verb < l-dobj=dobj)"
+    transformation {
+      target: "relation"
+      action: ADD_CHILD
+      label: "l-nsubj"
+      child: "v-f"
+    }
+    transformation {
+      target: "dobj"
+      action: ADD_CHILD
+      label: "l-extract"
+      child: "v-f"
+    }
+    transformation {
+      target: "verb"
+      action: ADD_CHILD
+      label: "l-TRACE"
+      child: "v-f"
+    }
+  }
+}
+
+rulegroup {
+  name: "extraction"
+  priority: 1
+  rule {
+    name: "pobj extraction"
+    priority: 1
+    tregex: "/^l-.*$/=target < /^t-(?:N|V).*$/ !<< /^l-(?:rcmod|partmod|xcomp).*$/ [<< (l-prep=prep !< /^l-(?:pobj|pcomp)$/) | << (l-prep=prep < (l-pcomp !< /^l-(?:pobj|pcomp)$/))]"
+    # The country (which) Darwin "belongs" to, is UK.
+    # The organization (which) he became "president" of.
+    transformation {
+      target: "prep"
+      action: ADD_CHILD
+      label: "l-pobj"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "nsubj extraction"
+    priority: 2
+    tregex: "/^l-.*$/=target < /^t-V.*$/ < /^l-wh-nsubj$/"
+    # The company, which "bought" Youtube, owns Gmail.
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-nsubj"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "nsubjpass extraction"
+    priority: 2
+    tregex: "/^l-.*$/=target < /^t-V.*$/ < /^l-wh-nsubjpass$/"
+    # The company, which "bought" Youtube, owns Gmail.
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-nsubjpass"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "wh-pobj extraction"
+    priority: 3
+    tregex: "/^l-.*$/=target < /^t-(?:N|V).*$/ !<< /^l-(?:rcmod|partmod|xcomp|ccomp|conj-s)$/ << (l-prep=prep < (l-pobj=pobj !< l-extract < l-wh-marker))"
+    # The state in which he was "born".
+    transformation {
+      target: "pobj"
+      action: ADD_CHILD
+      label: "l-extract"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "dobj extraction"
+    priority: 3
+    tregex: "/^l-.*$/=target < /^t-V.*$/ < l-wh-dobj"
+    # The company which Bill "founded", acquired Skype.
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-dobj"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "attr extraction"
+    priority: 3
+    tregex: "l-ROOT=target < /^t-V.*$/ < l-wh-attr"
+    # "Who" is the founder of AdMob?
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-attr"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "wh-advmod (how many) extraction"
+    priority: 4
+    tregex: "l-wh-advmod=target < /^w-[Hh]ow$/ $ w-many > (/^l-.*$/ < /^t-JJ.*$/ [> (/^l-.*$/ > /^l-.*$/=head) | > /^l-.*$/=head])"
+    # "How" many Oscars did Titanic win?
+    transformation {
+      target: "head"
+      action: ADD_CHILD
+      label: "l-wh-count"
+      child: "v-foo"
+    }
+  }
+  rule {
+    name: "wh-poss extraction"
+    priority: 6
+    tregex: "/^l-.*$/=target < /^t-(?:N|V).*$/ !<< /^l-(?:extract|rcmod|partmod|xcomp|ccomp)$/ << (l-poss=poss [< /^t-W.*$/])"
+    transformation {
+      target: "poss"
+      action: ADD_CHILD
+      label: "l-extract"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "tmod extraction"
+    priority: 7
+    tregex: "/^l-.*$/=target < /^t-V.*$/ < /^l-wh-tmod$/"
+    # What "year" was Obama elected president?
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-tmod"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "wh-dep extraction"
+    priority: 8
+    tregex: "/^l-.*$/=target < /^t-V.*$/ < /^l-wh-dep$/"
+    # What "season" was Obama elected president?
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-dep"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "rcmod extraction (treat as dep for now)"
+    priority: 9
+    tregex: "l-rcmod=target !< /^l-(?:wh-advmod|advmod|mark)$/ < l-dobj"
+    # When was the last time Orioles won the Super Bowl.
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-dep"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+  rule {
+    name: "relative dobj extraction backoff"
+    priority: 10
+    tregex: "l-rcmod=target !< /^l-(?:dobj|wh-advmod)$/"
+    # The company Bill "founded", acquired Skype.
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-dobj"
+      child: "v-f"
+    }
+    transformation {
+      target: "target"
+      action: ADD_CHILD
+      label: "l-BIND"
+      child: "v-f"
+    }
+  }
+}
+
+rulegroup {
+  name: "copula"
+  priority: 1
+  rule {
+    name: "nsubj/attr copula"
+    priority: 1
+    tregex: "/^l-(?:nsubj|attr)$/=first $ /^l-attr$/=second !$ l-prep"
+    # "Obama" is the "President".
+    transformation {
+      target: "first"
+      action: CHANGE_LABEL
+      label: "l-nsubj-copula"
+    }
+    transformation {
+      target: "second"
+      action: CHANGE_LABEL
+      label: "l-attr-copula"
+    }
+  }
+}
