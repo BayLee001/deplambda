@@ -8,6 +8,8 @@ The files in this repository contain rules for conversion of syntactic dependenc
 These rules are described in more detail in the paper:  
 Siva Reddy, Oscar T&auml;ckstr&ouml;m, Michael Collins, Tom Kwiatkowski, Dipanjan Das, Mark Steedman, Mirella Lapata (2016). *Transforming Dependency Structures to Logical Forms for Semantic Parsing*. Transactions of the Association for Computational Linguistics, vol 4.
 
+Note that this repository does not include any software required to apply these rules.
+
 Content
 -------
 The rules consists of the following files:
