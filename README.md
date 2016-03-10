@@ -3,7 +3,7 @@ Dependency to Lambda-calculus Conversion Rules
 Overview
 --------
 The files in this repository contain rules for conversion of syntactic dependency trees (in the "[Stanford dependencies style](http://nlp.stanford.edu/software/dependencies_manual.pdf
-)" to lambda-calculus logical forms representing the semantics of a sentence or question.
+)") to lambda-calculus logical forms representing the semantics of a sentence or question.
 
 These rules are described in more detail in the paper:  
 Siva Reddy, Oscar T&auml;ckstr&ouml;m, Michael Collins, Tom Kwiatkowski, Dipanjan Das, Mark Steedman, Mirella Lapata (2016). *Transforming Dependency Structures to Logical Forms for Semantic Parsing*. Transactions of the Association for Computational Linguistics, vol 4.
