@@ -12,13 +12,13 @@ Content
 -------
 The rules consists of the following files:
 
-* [dependency-transformation-rule.proto](../blob/master/dependency-transformation-rule.proto):  
+* [dependency-transformation-rule.proto](../master/dependency-transformation-rule.proto):  
    Protocol buffer format in which the rules are specified.
 
-* [transformation-rules.pb.txt](../blob/master/transformation-rules.pb.txt):  
+* [transformation-rules.pb.txt](../master/transformation-rules.pb.txt):  
    Transformation rules that modify the dependency-tree (e.g., by adding BIND operations) and relabeling dependencies to simplify lambda expression assignment.
 
-* [assignment-rules.pb.txt](../blob/master/assignment-rules.pb.txt):  
+* [assignment-rules.pb.txt](../master/assignment-rules.pb.txt):  
   Lambda-calculus assignment rules, which assign lambda-calculus expressions to each leaf node in the s-expressions.
 
 License
